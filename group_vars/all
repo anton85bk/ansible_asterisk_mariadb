@@ -16,15 +16,15 @@ mariadb_odbc_bin_tar_url: https://downloads.mariadb.com/Connectors/odbc/connecto
 
 # Mariadb passwords:
 mysql_database: asterisk
-mysql_root_password: meiJie0chaejongielohRi9hasethei8 
+mysql_root_password: mariadb_root_user_password 
 mysql_user_name: asterisk 
-mysql_user_password: asteriskpass
+mysql_user_password: mariadb_asteris_user_kpassword
 
 # MariaDB galera cluster:
 galera_cluster_always_rebuild: False 
 galera_cluster_name: asterisk-db-galera
-keepalived_virtual_router_id: 02
-keepalived_auth_pass: 19ffhs3v
+keepalived_virtual_router_id: 03
+keepalived_auth_pass: random12
 keepalived_server_interface: ens192
 keepalived_vip: 10.48.97.50/25
 
