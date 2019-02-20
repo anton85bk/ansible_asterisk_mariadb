@@ -1,0 +1,32 @@
+{% for host in groups.asterisk_server %}
+CREATE TABLE `cel_{{ host | regex_replace('\.', '') }}` (
+`id` int(11) NOT NULL AUTO_INCREMENT,
+`eventtype` varchar(30) NOT NULL DEFAULT '',
+`eventtime` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+`cid_name` varchar(80) NOT NULL DEFAULT '',
+`cid_num` varchar(80) NOT NULL DEFAULT '',
+`cid_ani` varchar(80) NOT NULL DEFAULT '',
+`cid_rdnis` varchar(80) NOT NULL DEFAULT '',
+`cid_dnid` varchar(80) NOT NULL DEFAULT '',
+`exten` varchar(80) NOT NULL DEFAULT '',
+`context` varchar(80) NOT NULL DEFAULT '',
+`channame` varchar(80) NOT NULL DEFAULT '',
+`src` varchar(80) NOT NULL DEFAULT '',
+`dst` varchar(80) NOT NULL DEFAULT '',
+`channel` varchar(80) NOT NULL DEFAULT '',
+`dstchannel` varchar(80) NOT NULL DEFAULT '',
+`appname` varchar(80) NOT NULL DEFAULT '',
+`appdata` varchar(80) NOT NULL DEFAULT '',
+`amaflags` int(11) NOT NULL DEFAULT '0',
+`accountcode` varchar(20) NOT NULL DEFAULT '',
+`uniqueid` varchar(32) NOT NULL DEFAULT '',
+`linkedid` varchar(32) NOT NULL DEFAULT '',
+`peer` varchar(80) NOT NULL DEFAULT '',
+`userdeftype` varchar(255) NOT NULL DEFAULT '',
+`eventextra` varchar(255) NOT NULL DEFAULT '',
+`userfield` varchar(255) NOT NULL DEFAULT '',
+PRIMARY KEY (`id`),
+KEY `uniqueid_index` (`uniqueid`),
+KEY `linkedid_index` (`linkedid`)
+);
+{% endfor %}

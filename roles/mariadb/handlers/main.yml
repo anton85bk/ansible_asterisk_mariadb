@@ -1,0 +1,9 @@
+---
+- name: SElinux restore context
+  command: "restorecon -R /"
+
+- name: restart mariadb
+  service: name=mariadb state=restarted
+
+- name: restart asterisk
+  service: name=asterisk state=restarted

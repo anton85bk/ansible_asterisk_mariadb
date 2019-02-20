@@ -1,0 +1,121 @@
+---
+- name: Check if asterisk binary already exist
+  stat:
+    path: /usr/sbin/asterisk
+  register: asterisk_binary
+
+# if Asterisk not installed install it
+- import_tasks: install-asterisk.yml
+  when: asterisk_binary.stat.exists == False
+
+# Continue with configuration of Asterisk
+- name: Copy config files
+  copy:
+    src: asterisk_configs/
+    dest: /etc/asterisk/
+  notify: restart asterisk
+
+# if we have dbservers then configure asterisk to use it
+- block:
+
+    # check that mysql-connector-odbc installed
+    - name: Check if odb-connector already installed
+      stat:
+        path: /lib64/libmaodbc.so
+      register: odbc_connector_library
+
+    - block:
+
+      # Install ODBC 3.0.8 for Mariadb 10.3
+      - name: Download odbc 3.0.8 for Mariadb 10.3
+        get_url:
+          url: "{{ mariadb_odbc_bin_tar_url }}"
+          dest: /root/
+        environment:
+          http_proxy: "{{ proxy_server }}"
+          https_proxy: "{{ proxy_server }}"
+
+      - name: Unarchive source
+        unarchive:
+          src: "/root/{{ mariadb_odbc_tar_name }}"
+          dest: /
+          remote_src: yes
+
+      - name: mysql-connector-odbc (unixODBC package)
+        yum:
+          name: mysql-connector-odbc
+          state: present
+
+      when: odbc_connector_library.stat.exists == False
+
+    # Templating odbc.ini and odbcinst.ini into system
+    - name: Ensure odbc.ini configuration
+      template:
+        src: "{{ item }}"
+        dest: "/etc/{{ item }}"
+      loop:
+        - odbc.ini
+        - odbcinst.ini
+      notify:
+        - restart asterisk
+        - SElinux restore context
+
+    #  Check config files present
+    - name: Copy res_odbc.conf and func_odbc.conf
+      template:
+        src: "{{ item[0] }}"
+        dest: "{{ item[1] }}"
+      loop:
+        - ['res_odbc.conf', '/etc/asterisk/res_odbc.conf']
+        - ['func_odbc.conf', '/etc/asterisk/func_odbc.conf']
+        - ['cdr_adaptive_odbc.conf', '/etc/asterisk/cdr_adaptive_odbc.conf']
+        - ['cel_odbc.conf', '/etc/asterisk/cel_odbc.conf']
+        - ['cel.conf', '/etc/asterisk/cel.conf']
+      notify:
+        - restart asterisk
+        - SElinux restore context
+  when: groups.db_server is defined and ( (groups.db_server | count) > 0 )
+
+- name: Configure IAX2 trunk between asterisk instanses
+  template:
+    src: iax.conf
+    dest: /etc/asterisk/iax.conf
+  notify: restart asterisk
+  tags: iax-config
+
+- name: Configure firewall for 4569/tcp (IAX2) port
+  firewalld:
+    port: 4569/tcp
+    permanent: True
+    immediate: True
+    state: enabled
+  when: (iax_trunking | bool) == True and groups.asterisk_server is defined and ( (groups.asterisk_server | count) > 1 )
+  tags: iax-config
+
+# Configure H.323 trunk to upstream PBX
+- name: H.323 trunk to upstream PBX
+  template:
+    src: ooh323.conf
+    dest: /etc/asterisk/ooh323.conf
+  notify: restart asterisk
+  tags: h323-config
+
+# Check pjsip configuration
+- name: Pjsip configuration
+  template:
+    src: pjsip.conf
+    dest: /etc/asterisk/pjsip.conf
+  notify: restart asterisk
+  tags:
+    - sip-config
+    - pjsip-config
+
+# Check dialplan configuration
+- name: Dialplan configuration
+  template:
+    src: extensions.conf
+    dest: /etc/asterisk/extensions.conf
+  notify: restart asterisk
+  tags:
+    - iax-config
+    - dialplan-config

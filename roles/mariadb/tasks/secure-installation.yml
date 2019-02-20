@@ -1,0 +1,38 @@
+---
+- name: Setup root password for first time
+  mysql_user:
+    name: "root"
+    host: 'localhost'
+    password: "{{ mysql_root_password }}"
+    priv: '*.*:ALL,GRANT'
+    state: present
+  notify: restart mariadb
+  ignore_errors: True
+
+- name: Delete test db
+  mysql_db:
+    name: test
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    state: absent
+  notify: restart mariadb
+
+- name: Remove anonymous MySQL users.
+  mysql_user:
+    name: ""
+    state: absent
+    login_user: root
+    login_password: "{{ mysql_root_password  }}"
+  notify: restart mariadb
+
+- name: Setup asterisk user and privileges
+  mysql_user:
+    name: "{{ mysql_user_name }}"
+    host: "{{ item }}"
+    password: "{{ mysql_user_password }}"
+    priv: "{{ mysql_database }}.*:ALL,GRANT"
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    state: present
+  loop: "{{ [ groups.asterisk_server, keepalived_vip | regex_replace('^(.+?)/\\d+$', '\\1')] | flatten }}"
+

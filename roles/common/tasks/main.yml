@@ -1,0 +1,31 @@
+---
+- name: Setup ssh not use host resolv
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    state: present
+    regexp: '^UseDNS '
+    insertafter: '^#UseDNS '
+    line: 'UseDNS no'
+  notify: restart sshd
+
+- name: Setup http-proxy for yum
+  blockinfile:
+    block: |
+      proxy={{ proxy_server }}
+    insertafter: EOF
+    path: /etc/yum.conf
+
+- name: Set timezone to Asia/Irkutsk
+  timezone:
+    name: "{{ local_timezone }}"
+  notify: restart crond
+
+- name: Install handly tools
+  yum:
+    name:
+      - vim
+      - net-tools 
+      - telnet 
+    state: present
+  tags:
+    - long-run

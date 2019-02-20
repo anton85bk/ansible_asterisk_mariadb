@@ -1,0 +1,20 @@
+---
+- hosts: all
+  remote_user: root
+  roles:
+  - common
+
+- hosts: db_server 
+  remote_user: root
+  roles:
+  - mariadb 
+
+- hosts: xmpp_server 
+  remote_user: root
+  roles:
+  - ejabberd 
+
+- hosts: asterisk_server
+  remote_user: root
+  roles:
+  - asterisk

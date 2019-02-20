@@ -1,0 +1,19 @@
+---
+- name: Check if mariadb binary already exist
+  stat:
+    path: /usr/sbin/mysqld
+  register: mysqld_binary
+
+# if Maridb not installed install it
+- import_tasks: install-mariadb.yml
+  when: mysqld_binary.stat.exists == False
+
+# If there are several mariadb instances - setup galera (if not already)
+- import_tasks: setup-galera.yml
+  when: groups.db_server is defined and ( (groups.db_server | count) > 1 )
+  tags: galera-config
+
+# If there are several mariadb instances - setup keepalived (if not already) 
+- import_tasks: install-keepalived.yml
+  when: groups.db_server is defined and ( (groups.db_server | count) > 1 )
+  tags: keepalived-config

@@ -1,0 +1,136 @@
+---
+- name: Check if sources already downloaded
+  find:
+    depth: 1
+    file_type: file
+    patterns: "{{ asterisk_tar_name }}"
+    paths: /root
+  register: asterisk_source_tarball
+
+- name: Download asterisk sources
+  get_url:
+    url: "{{ asterisk_tar_url }}"
+    dest: /root/
+  environment:
+    http_proxy: "{{ proxy_server }}"
+    https_proxy: "{{ proxy_server }}"
+  when: asterisk_source_tarball.matched == 0
+
+- name: Unarchive source
+  unarchive:
+    src: "/root/{{ asterisk_tar_name }}"
+    dest: /root/
+    remote_src: yes
+
+- name: Find the unpacked src directory
+  find:
+    depth: 1
+    file_type: directory
+    paths: /root
+  register: asterisk_source_directory
+
+- name: Which directory we found
+  debug:
+    msg: "Found asterisk sources: {{ asterisk_source_directory.files[0].path }}"
+
+- name: Install epel repo
+  yum:
+    name: epel-release
+    state: present
+
+- name: Install prereq (packaged)
+  command: "{{ asterisk_source_directory.files[0].path }}/contrib/scripts/install_prereq install"
+  args:
+    chdir: "{{ asterisk_source_directory.files[0].path }}"
+
+- name: Setup http-proxy for svn
+  blockinfile:
+    create: True
+    block: |
+      [global]
+      http-proxy-host={{ proxy_server | regex_search('^https?\:\/\/(.*?)(\:\d+)?$', '\1') }}
+      http-proxy-port={{ proxy_server | regex_search('^https?\:\/\/.*?(\:(\d+))?$', '\2') }}
+    insertafter: EOF
+    path: /root/.subversion/servers
+
+- name: Install prereq (unpackaged)
+  command: "{{ asterisk_source_directory.files[0].path }}/contrib/scripts/install_prereq install-unpackaged"
+  args:
+    chdir: "{{ asterisk_source_directory.files[0].path }}"
+
+- name: Get mp3 source
+  command: "./contrib/scripts/get_mp3_source.sh"
+  args:
+    chdir: "{{ asterisk_source_directory.files[0].path }}"
+  ignore_errors: True
+
+- name: make distclean
+  command: "make distclean"
+  args:
+    chdir: "{{ asterisk_source_directory.files[0].path }}"
+
+- name: configure
+  command: "./configure --with-jansson-bundled"
+  args:
+    chdir: "{{ asterisk_source_directory.files[0].path }}"
+  environment:
+    http_proxy: "{{ proxy_server }}"
+    https_proxy: "{{ proxy_server }}"
+
+- name: copy menuselect.makeopts
+  copy:
+    src: menuselect.makeopts
+    dest: "{{ asterisk_source_directory.files[0].path }}"
+
+- name: make
+  command: "make"
+  args:
+    chdir: "{{ asterisk_source_directory.files[0].path }}"
+
+- name: make install
+  command: "make install"
+  args:
+    chdir: "{{ asterisk_source_directory.files[0].path }}"
+  environment:
+    http_proxy: "{{ proxy_server }}"
+    https_proxy: "{{ proxy_server }}"
+
+- name: make samples
+  command: "make samples"
+  args:
+    chdir: "{{ asterisk_source_directory.files[0].path }}"
+
+- name: make config
+  command: "make config"
+  args:
+    chdir: "{{ asterisk_source_directory.files[0].path }}"
+
+- name: make install-logrotate
+  command: "make install-logrotate"
+  args:
+    chdir: "{{ asterisk_source_directory.files[0].path }}"
+
+- name: SElinux restore context
+  command: "restorecon -R /"
+
+- name: Delete unnecessary config files
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/asterisk/extensions.ael
+    - /etc/asterisk/extensions.lua
+    - /etc/asterisk/iax.conf
+
+- name: Open firewall ports
+  firewalld:
+    service: sip
+    permanent: True
+    immediate: True
+    state: enabled
+
+- name: Enable and start asterisk service
+  service:
+    name: asterisk
+    enabled: yes
+    state: started

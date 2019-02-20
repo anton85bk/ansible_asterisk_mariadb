@@ -1,0 +1,60 @@
+---
+#
+## Generic settings ## 
+#
+
+local_timezone: "Asia/Irkutsk"
+proxy_server: "http://10.48.0.64:3128"
+
+#
+### Mariadb installation ###
+#
+
+# Settings to get Mariadb ODBC connector source:
+mariadb_odbc_tar_name: "mariadb-connector-odbc-3.0.8-ga-rhel7-x86_64.tar.gz"
+mariadb_odbc_bin_tar_url: https://downloads.mariadb.com/Connectors/odbc/connector-odbc-3.0.8/{{ mariadb_odbc_tar_name }}
+
+# Mariadb passwords:
+mysql_database: asterisk
+mysql_root_password: meiJie0chaejongielohRi9hasethei8 
+mysql_user_name: asterisk 
+mysql_user_password: asteriskpass
+
+# MariaDB galera cluster:
+galera_cluster_always_rebuild: False 
+galera_cluster_name: asterisk-db-galera
+keepalived_virtual_router_id: 02
+keepalived_auth_pass: 19ffhs3v
+keepalived_server_interface: ens192
+keepalived_vip: 10.48.97.50/25
+
+#
+### Asterisk installation ###
+#
+
+# Settings to get Asterisk source:
+asterisk_tar_name: "asterisk-16-current.tar.gz"
+asterisk_tar_url: https://downloads.asterisk.org/pub/telephony/asterisk/{{ asterisk_tar_name }}
+asterisk_source_dir: /root/asterisk-16.1.1
+
+#
+### Asterisk configuration ###
+#
+
+# Asterisk IAX2 trunking:
+iax_trunking: True 
+iax_trunk_password: asterisk_iax2_trunk_password
+
+# H.323 trunk to upstream PBX
+h323_trunking: False 
+h323_dialplan_context: from-upstream
+h323_upstream_pbx_ip: 192.168.0.1
+h323_upstream_pbx_trunk_port: 5001
+h323_upstream_pbx_dtmfmode: auto
+
+# PjSIP endpoints configuration:
+pjsip_endpoints_count: 10
+pjsip_endpoint_password: endpoint_password
+
+# Asterisk Dialplan configuration:
+asterisk_dialplan_allow_forward_ext_to_peers: True

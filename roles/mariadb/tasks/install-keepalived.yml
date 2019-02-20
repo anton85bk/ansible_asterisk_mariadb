@@ -1,0 +1,29 @@
+---
+- name: Check if keepalived binary already exist
+  stat:
+    path: /usr/sbin/keepalived 
+  register: keepalived_binary
+
+- name: Setup keepalived
+  yum:
+    name: keepalived
+    state: present
+  when: keepalived_binary.stat.exists == False
+
+- name: Setup firewall for vrrp protocol
+  firewalld:
+    immediate: yes
+    permanent: yes
+    rich_rule: 'rule family="ipv4" destination address="224.0.0.18" protocol value="vrrp" accept'
+    state: enabled 
+
+- name: Template keepalived.conf
+  template:
+    src: keepalived.conf
+    dest: /etc/keepalived/keepalived.conf
+
+- name: Restart keepalived
+  service:
+    name: keepalived
+    state: restarted
+    enabled: true

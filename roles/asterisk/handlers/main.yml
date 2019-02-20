@@ -1,0 +1,7 @@
+---
+- name: restart asterisk
+  service: name=asterisk state=restarted
+
+- name: SElinux restore context
+  command: "restorecon -R /"
+

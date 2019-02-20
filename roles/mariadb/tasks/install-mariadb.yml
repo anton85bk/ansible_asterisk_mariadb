@@ -1,0 +1,75 @@
+---
+- block:
+  - name: Add mariadb repository setup script
+    get_url:
+      url: https://downloads.mariadb.com/MariaDB/mariadb_repo_setup
+      dest: /root/mariadb_repo_setup.sh
+      mode: 0755
+  - name: Setup mariadb repository
+    command: /root/mariadb_repo_setup.sh
+  environment:
+    http_proxy: "{{ proxy_server }}"
+    https_proxy: "{{ proxy_server }}"
+
+- name: Check for mariadb-server galera MySQL-python
+  yum:
+    name:
+      - MariaDB-server
+      - MariaDB-client
+      - galera
+      - MySQL-python
+    state: present
+  notify: restart mariadb
+
+# (needed for secure-installation)
+- name: Check for mariadb-sever running
+  service:
+    name: mariadb
+    enabled: True
+    state: started
+
+# Secure mariadb installation
+- import_tasks: secure-installation.yml
+
+# Now we can open firewall
+- name: Open firewall mysql ports from asterisk server
+  firewalld:
+    service: mysql
+    permanent: True
+    immediate: True
+    state: enabled
+
+# Create database and tables for asterisk (only on first db-server)
+- block:
+
+  - name: Create asterisk database
+    mysql_db:
+      name: "{{ mysql_database }}"
+      login_user: root
+      login_password: "{{ mysql_root_password }}"
+      state: present
+    tags: database-operations
+
+  - name: Copy .sql files to apply
+    template:
+      src: "{{ item }}"
+      dest: /root
+    loop:
+      - cdr_table.sql
+      - cel_table.sql
+    tags: database-operations
+
+  - name: Apply .sql files
+    mysql_db:
+      name: "{{ mysql_database }}"
+      login_user: root
+      login_password: "{{ mysql_root_password }}"
+      state: import
+      target: "{{ item }}"
+    loop:
+      - cdr_table.sql
+      - cel_table.sql
+    tags: database-operations
+
+  when: inventory_hostname == groups.db_server[0]
+
