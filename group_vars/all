@@ -18,7 +18,7 @@ mariadb_odbc_bin_tar_url: https://downloads.mariadb.com/Connectors/odbc/connecto
 mysql_database: asterisk
 mysql_root_password: mariadb_root_user_password 
 mysql_user_name: asterisk 
-mysql_user_password: mariadb_asteris_user_kpassword
+mysql_user_password: mariadb_asterisk_user_password
 
 # MariaDB galera cluster:
 galera_cluster_always_rebuild: False 
