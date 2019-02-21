@@ -83,6 +83,12 @@
     src: menuselect.makeopts
     dest: "{{ asterisk_source_directory.files[0].path }}"
 
+- name: Point asterisk to lmariadb
+  file:
+    state: link
+    src: /usr/lib64/libmariadbd.a
+    dest: /usr/lib64/libmariadb.a
+
 - name: make
   command: "make"
   args:
