@@ -44,14 +44,15 @@
     chdir: "{{ asterisk_source_directory.files[0].path }}"
 
 - name: Setup http-proxy for svn
-  blockinfile:
-    create: True
-    block: |
-      [global]
-      http-proxy-host={{ proxy_server | regex_search('^https?\:\/\/(.*?)(\:\d+)?$', '\1') }}
-      http-proxy-port={{ proxy_server | regex_search('^https?\:\/\/.*?(\:(\d+))?$', '\2') }}
-    insertafter: EOF
+  ini_file:
     path: /root/.subversion/servers
+    state: present 
+    section: global
+    option: "{{ item[0] }}"
+    value: "{{ item[1] }}"
+  loop:
+    - ['http-proxy-host', "{{ proxy_server | regex_search('^https?://(.+?)(:\\d+)?$', '\\1') | join }}"]
+    - ['http-proxy-port', "{{ proxy_server | regex_search('^https?://.+?(:(\\d+))?$', '\\2') | join }}"]
 
 - name: Install prereq (unpackaged)
   command: "{{ asterisk_source_directory.files[0].path }}/contrib/scripts/install_prereq install-unpackaged"
