@@ -1,30 +1,4 @@
 ---
-# Open firewall port for Galera replication
-- name: Open firewall ports for galera replication
-  firewalld:
-    port: "{{ item }}"
-    permanent: True
-    immediate: True
-    state: enabled
-  loop:
-    - "4444/tcp"
-    - "4567-4568/tcp"
-
-# write config files to work with Galera cluster
-- name: Configure /etc/my.cnf.d/server.cnf to setup cluster name
-  ini_file:
-    path: /etc/my.cnf.d/server.cnf
-    section: mysqld
-    state: present
-    option: "{{ item[0] }}"
-    value: "{{ item[1] }}"
-  loop:
-    - ['wsrep_on', 'on']
-    - ['wsrep-cluster-name', '{{ galera_cluster_name }}']
-    - ['wsrep_provider', '/usr/lib64/galera/libgalera_smm.so']
-    - ['binlog_format', 'ROW']
-    - ['wsrep_cluster_address', 'gcomm://{{ groups.db_server | join(",") }}']
-
 # Reinitialize new cluster (if not forbidden by already working cluster)
 - name: Check if there already galera cluster (file /var/lib/mysql/grastate.dat)
   stat:
@@ -33,12 +7,50 @@
 
 - block:
 
-  # task for non initial nodes in  galera cluster
-  - name: Shutdown mariadb on all other nodes
+  # Open firewall port for Galera replication
+  - name: Open firewall ports for galera replication
+    firewalld:
+      port: "{{ item }}"
+      permanent: True
+      immediate: True
+      state: enabled
+    loop:
+      - "4444/tcp"
+      - "4567-4568/tcp"
+
+  # Add selinux rules to that ports:
+  - name: Set semanage port 4444, 4567, 4568
+    seport:
+      ports: "4444,4567,4568"
+      proto: tcp
+      setype: mysqld_port_t
+      state: present
+
+  - name: Set mysqld_t permissive
+    selinux_permissive:
+      domain: mysqld_t
+      permissive: true
+
+  # Stop all mariadb before setting up galera cluster 
+  - name: Shutdown all mariadb nodes before form a cluster 
     service:
       name: mariadb
       state: stopped
-    when: inventory_hostname != groups.db_server[0]
+
+  # write config files to work with Galera cluster
+  - name: Configure /etc/my.cnf.d/server.cnf to setup cluster name
+    ini_file:
+      path: /etc/my.cnf.d/server.cnf
+      section: mysqld
+      state: present
+      option: "{{ item[0] }}"
+      value: "{{ item[1] }}"
+    loop:
+      - ['wsrep_on', 'on']
+      - ['wsrep-cluster-name', '{{ galera_cluster_name }}']
+      - ['wsrep_provider', '/usr/lib64/galera/libgalera_smm.so']
+      - ['binlog_format', 'ROW']
+      - ['wsrep_cluster_address', 'gcomm://{{ groups.db_server | first }}']
 
   # tasks for initial galera cluster node
   - block:
@@ -47,13 +59,12 @@
       debug:
         msg: "Initialize galera-cluster on first database node '{{ groups.db_server[0] }}'"
 
-    - name: Stop mariadb server on initial node
-      service:
-        name: mariadb
-        state: stopped
-
     - name: Bootstrap first galera cluster node
       command: /usr/bin/galera_new_cluster
+
+    - name: Pause for a few seconds
+      pause:
+        seconds: 15
 
     when: inventory_hostname == groups.db_server[0]
 
@@ -61,7 +72,7 @@
   - name: Restart mariadb on other nodes to join into the cluster
     service:
       name: mariadb
-      state: restarted
+      state: started 
     when: inventory_hostname != groups.db_server[0]
 
   when: galera_cluster_always_rebuild == True or cluster_exists.stat.exists == False

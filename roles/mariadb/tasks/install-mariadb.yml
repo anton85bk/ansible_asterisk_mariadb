@@ -18,6 +18,9 @@
       - MariaDB-client
       - galera
       - MySQL-python
+      - socat
+      - nmap-ncat
+      - policycoreutils-python
     state: present
   notify: restart mariadb
 
