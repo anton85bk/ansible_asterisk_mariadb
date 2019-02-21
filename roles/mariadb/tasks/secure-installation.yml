@@ -6,7 +6,6 @@
     password: "{{ mysql_root_password }}"
     priv: '*.*:ALL,GRANT'
     state: present
-  notify: restart mariadb
   ignore_errors: True
 
 - name: Delete test db
@@ -15,7 +14,6 @@
     login_user: root
     login_password: "{{ mysql_root_password }}"
     state: absent
-  notify: restart mariadb
 
 - name: Remove anonymous MySQL users.
   mysql_user:
@@ -23,7 +21,6 @@
     state: absent
     login_user: root
     login_password: "{{ mysql_root_password  }}"
-  notify: restart mariadb
 
 - name: Setup asterisk user and privileges
   mysql_user:

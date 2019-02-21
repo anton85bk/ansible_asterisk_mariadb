@@ -22,7 +22,6 @@
       - nmap-ncat
       - policycoreutils-python
     state: present
-  notify: restart mariadb
 
 # (needed for secure-installation)
 - name: Check for mariadb-sever running
