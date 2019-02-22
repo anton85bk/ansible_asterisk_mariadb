@@ -30,7 +30,6 @@ galera_cluster_always_rebuild: False
 galera_cluster_name: asterisk-db-galera
 keepalived_virtual_router_id: 03
 keepalived_auth_pass: random12
-keepalived_server_interface: eth0
 keepalived_vip: 10.48.97.50/25
 
 #
