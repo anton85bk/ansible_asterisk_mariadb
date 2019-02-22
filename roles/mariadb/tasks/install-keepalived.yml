@@ -10,6 +10,11 @@
     state: present
   when: keepalived_binary.stat.exists == False
 
+- name: Enable service keepalived
+  service:
+    name: keepalived
+    enabled: true
+
 - name: Setup firewall for vrrp protocol
   firewalld:
     immediate: yes
@@ -21,9 +26,5 @@
   template:
     src: keepalived.conf
     dest: /etc/keepalived/keepalived.conf
+  notify: restart keepalived
 
-- name: Restart keepalived
-  service:
-    name: keepalived
-    state: restarted
-    enabled: true
