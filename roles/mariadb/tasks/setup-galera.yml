@@ -50,7 +50,7 @@
       - ['wsrep-cluster-name', '{{ galera_cluster_name }}']
       - ['wsrep_provider', '/usr/lib64/galera/libgalera_smm.so']
       - ['binlog_format', 'ROW']
-      - ['wsrep_cluster_address', 'gcomm://{{ groups.db_server | first }}']
+      - ['wsrep_cluster_address', 'gcomm://{{ groups.db_server | join(",")}}']
 
   # tasks for initial galera cluster node
   - block:
