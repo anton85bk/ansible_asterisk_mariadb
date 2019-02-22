@@ -11,9 +11,7 @@
   get_url:
     url: "{{ asterisk_tar_url }}"
     dest: /root/
-  environment:
-    http_proxy: "{{ proxy_server }}"
-    https_proxy: "{{ proxy_server }}"
+  environment: "{{ proxy_env | default({}) }}"
   when: asterisk_source_tarball.matched == 0
 
 - name: Unarchive source
@@ -51,8 +49,9 @@
     option: "{{ item[0] }}"
     value: "{{ item[1] }}"
   loop:
-    - ['http-proxy-host', "{{ proxy_server | regex_search('^https?://(.+?)(:\\d+)?$', '\\1') | join }}"]
-    - ['http-proxy-port', "{{ proxy_server | regex_search('^https?://.+?(:(\\d+))?$', '\\2') | join }}"]
+    - ['http-proxy-host', "{{ proxy_env['http_proxy'] | regex_search('^https?://(.+?)(:\\d+)?$', '\\1') | join }}"]
+    - ['http-proxy-port', "{{ proxy_env['http_proxy'] | regex_search('^https?://.+?(:(\\d+))?$', '\\2') | join }}"]
+  when: proxy_env is defined
 
 - name: Install prereq (unpackaged)
   command: "{{ asterisk_source_directory.files[0].path }}/contrib/scripts/install_prereq install-unpackaged"
@@ -74,9 +73,7 @@
   command: "./configure --with-jansson-bundled"
   args:
     chdir: "{{ asterisk_source_directory.files[0].path }}"
-  environment:
-    http_proxy: "{{ proxy_server }}"
-    https_proxy: "{{ proxy_server }}"
+  environment: "{{ proxy_env | default({}) }}"
 
 - name: copy menuselect.makeopts
   copy:
@@ -98,9 +95,7 @@
   command: "make install"
   args:
     chdir: "{{ asterisk_source_directory.files[0].path }}"
-  environment:
-    http_proxy: "{{ proxy_server }}"
-    https_proxy: "{{ proxy_server }}"
+  environment: "{{ proxy_env | default({}) }}"
 
 - name: make samples
   command: "make samples"

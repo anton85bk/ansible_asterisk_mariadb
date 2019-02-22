@@ -31,9 +31,7 @@
         get_url:
           url: "{{ mariadb_odbc_bin_tar_url }}"
           dest: /root/
-        environment:
-          http_proxy: "{{ proxy_server }}"
-          https_proxy: "{{ proxy_server }}"
+        environment: "{{ proxy_env | default({}) }}"
 
       - name: Unarchive source
         unarchive:
