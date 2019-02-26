@@ -31,11 +31,19 @@
       domain: mysqld_t
       permissive: true
 
-  # Stop all mariadb before setting up galera cluster 
-  - name: Shutdown all mariadb nodes before form a cluster 
+  # Stop mariadb servers on non first dbserver nodes
+  - name: Shutdown all mariadb nodes before form a cluster
     service:
       name: mariadb
       state: stopped
+    when: inventory_hostname != groups.db_server[0]
+
+  # At last - stop mariadb server at first dbserver
+  - name: Shutdown all mariadb nodes before form a cluster
+    service:
+      name: mariadb
+      state: stopped
+    when: inventory_hostname == groups.db_server[0]
 
   # write config files to work with Galera cluster
   - name: Configure /etc/my.cnf.d/server.cnf to setup cluster name
@@ -72,7 +80,7 @@
   - name: Restart mariadb on other nodes to join into the cluster
     service:
       name: mariadb
-      state: started 
+      state: started
     when: inventory_hostname != groups.db_server[0]
 
   when: galera_cluster_always_rebuild == True or cluster_exists.stat.exists == False
