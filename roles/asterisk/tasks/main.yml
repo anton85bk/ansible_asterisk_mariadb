@@ -49,6 +49,7 @@
     # Templating odbc.ini and odbcinst.ini into system
     - name: Ensure odbc.ini configuration
       template:
+        lstrip_blocks: yes
         src: "{{ item }}"
         dest: "/etc/{{ item }}"
       loop:
@@ -61,6 +62,7 @@
     #  Check config files present
     - name: Copy res_odbc.conf and func_odbc.conf
       template:
+        lstrip_blocks: yes
         src: "{{ item[0] }}"
         dest: "{{ item[1] }}"
       loop:
@@ -76,6 +78,7 @@
 
 - name: Configure IAX2 trunk between asterisk instanses
   template:
+    lstrip_blocks: yes
     src: iax.conf
     dest: /etc/asterisk/iax.conf
   notify: restart asterisk
@@ -93,6 +96,7 @@
 # Configure H.323 trunk to upstream PBX
 - name: H.323 trunk to upstream PBX
   template:
+    lstrip_blocks: yes
     src: ooh323.conf
     dest: /etc/asterisk/ooh323.conf
   notify: restart asterisk
@@ -101,6 +105,7 @@
 # Check pjsip configuration
 - name: Pjsip configuration
   template:
+    lstrip_blocks: yes
     src: pjsip.conf
     dest: /etc/asterisk/pjsip.conf
   notify: restart asterisk
@@ -111,6 +116,7 @@
 # Check dialplan configuration
 - name: Dialplan configuration
   template:
+    lstrip_blocks: yes
     src: extensions.conf
     dest: /etc/asterisk/extensions.conf
   notify: restart asterisk
